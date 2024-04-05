@@ -5,10 +5,12 @@ enum Role {
   ADMIN = 'ADMIN',
 }
 
+// Reset identity counter sql: "TRUNCATE TABLE <tableName> RESTART IDENTITY;"
+
 const prisma = new PrismaClient();
 async function main() {
-  await prisma.account.deleteMany();
-  await prisma.account.create({
+  await prisma.user.deleteMany();
+  await prisma.user.create({
     data: {
       username: 'admin',
       password: await bcrypt.hash('123456', 10),

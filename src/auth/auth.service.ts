@@ -13,23 +13,23 @@ export class AuthService {
   ) {}
   async signIn(signInDto: SignInDto, res: ResponseType) {
     const { username, password } = signInDto;
-    const account = await this.prisma.account.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: {
         username: username,
       },
     });
-    if (account) {
-      if (await bcrypt.compare(password, account.password)) {
+    if (user) {
+      if (await bcrypt.compare(password, user.password)) {
         const payload: {
           id: string;
           username: string;
           name: string;
           role: string;
         } = {
-          id: account.id,
-          username: account.name,
-          name: account.name,
-          role: account.role,
+          id: user.id,
+          username: user.name,
+          name: user.name,
+          role: user.role,
         };
 
         const accessToken = await this.jwtService.sign(
@@ -52,10 +52,10 @@ export class AuthService {
         return res.status(200).json({
           accessToken: accessToken,
           user: {
-            id: account.id,
-            username: account.name,
-            name: account.name,
-            role: account.role,
+            id: user.id,
+            username: user.name,
+            name: user.name,
+            role: user.role,
           },
         });
       }

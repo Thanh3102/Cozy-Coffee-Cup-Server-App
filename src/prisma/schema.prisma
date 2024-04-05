@@ -13,10 +13,69 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
-  id       String @id @default(uuid())
-  username String @unique
-  password String
+model User {
+  id         String     @id @default(uuid())
+  username   String     @unique
+  password   String
+  name       String
+  role       String
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  Material   Material[]
+  Provider   Provider[]
+}
+
+model Material {
+  id                 Int             @id @default(autoincrement())
+  name               String          @unique
+  stock_quantity     Int
+  expiration_date    DateTime
+  latest_import_date DateTime
+  create_at          DateTime        @default(now())
+  update_at          DateTime        @updatedAt
+  create_by          String
+  unit_id            Int
+  user               User            @relation(fields: [create_by], references: [id])
+  unit               Unit            @relation(fields: [unit_id], references: [id])
+  MeterialOnReceipt  ReceiptDetail[]
+}
+
+model Unit {
+  id       Int        @id @default(autoincrement())
   name     String
-  role     String
+  Material Material[]
+}
+
+model Provider {
+  id                String          @id @default(uuid())
+  name              String          @unique
+  phone             String?         @unique
+  email             String?         @unique
+  created_at        DateTime        @default(now())
+  updated_at        DateTime        @updatedAt
+  created_by        String
+  user              User            @relation(fields: [created_by], references: [id])
+  MeterialOnReceipt ReceiptDetail[]
+}
+
+model Receipt {
+  id            Int             @id @default(autoincrement())
+  create_by     String
+  created_at    DateTime        @default(now())
+  total_money   BigInt
+  note          String?
+  status        String
+  ReceiptDetail ReceiptDetail[]
+}
+
+model ReceiptDetail {
+  id          Int      @id @default(autoincrement())
+  material_id Int
+  receipt_id  Int
+  provider_id String
+  price       Int
+  quantity    Int
+  material    Material @relation(fields: [material_id], references: [id])
+  receipt     Receipt  @relation(fields: [receipt_id], references: [id])
+  provider    Provider @relation(fields: [provider_id], references: [id])
 }
