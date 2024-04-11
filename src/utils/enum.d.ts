@@ -1,5 +1,5 @@
-enum Role {
+export enum Role {
   ADMIN = 'ADMIN',
 }
 
-export { Role };
+
