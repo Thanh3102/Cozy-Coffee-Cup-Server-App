@@ -17,8 +17,6 @@ export class AuthController {
   }
   @Post('/refresh')
   async refresh(@Request() req: RequestType, @Response() res: ResponseType) {
-    console.log(req.headers);
-
     const accessToken = req.headers.authorization;
     const { refreshToken } = req.cookies;
     return this.authService.refresh(accessToken, refreshToken, res);

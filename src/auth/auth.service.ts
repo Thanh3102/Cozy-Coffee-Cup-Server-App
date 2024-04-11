@@ -65,7 +65,6 @@ export class AuthService {
     }
   }
   async logout(res: ResponseType) {
-    console.log('logout is running');
 
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
@@ -74,17 +73,11 @@ export class AuthService {
     });
   }
   async refresh(accessToken: string, refreshToken: string, res: ResponseType) {
-    console.log('>>> Refresh token: ', refreshToken);
-    console.log('>>> Access token: ', accessToken);
-
     if (refreshToken) {
-      console.log('have refresh');
-
       // if have access token => refresh new access token
       if (accessToken) {
         try {
           const { iat, exp, type } = await this.jwtService.verify(refreshToken);
-          console.log('>>> Type: ', type);
 
           if (type === 'refreshToken') {
             const { iat, exp, type, ...payload } = await this.jwtService.verify(
@@ -95,7 +88,6 @@ export class AuthService {
             );
 
             const newAccessToken = await this.jwtService.sign(payload);
-            console.log('456');
             return res.status(200).json({
               accessToken: newAccessToken,
               user: payload,
@@ -103,8 +95,6 @@ export class AuthService {
           }
         } catch (error) {
           console.log(error);
-          console.log('123');
-
           // if refresh token invalid => 401 Unauthorized
           return res.status(401).json({ message: 'Unauthorized' });
         }
@@ -129,7 +119,6 @@ export class AuthService {
     }
 
     // if no refresh token => 401 Unauthorized
-    console.log('789');
     return res.status(401).json({ message: 'Unauthorized' });
   }
 }
