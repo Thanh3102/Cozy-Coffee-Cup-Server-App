@@ -14,68 +14,97 @@ datasource db {
 }
 
 model User {
-  id         String     @id @default(uuid())
-  username   String     @unique
-  password   String
-  name       String
-  role       String
-  created_at DateTime   @default(now())
-  updated_at DateTime   @updatedAt
-  Material   Material[]
-  Provider   Provider[]
+  id          String        @id @default(uuid())
+  username    String        @unique
+  password    String
+  name        String
+  role        String
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+  Material    Material[]
+  Provider    Provider[]
+  Import_Note Import_Note[]
+  Export_Note Export_Note[]
 }
 
 model Material {
-  id                 Int             @id @default(autoincrement())
-  name               String          @unique
+  id                 Int                  @id @default(autoincrement())
+  name               String               @unique
   stock_quantity     Int
-  expiration_date    DateTime
-  latest_import_date DateTime
-  create_at          DateTime        @default(now())
-  update_at          DateTime        @updatedAt
-  create_by          String
+  expiration_date    DateTime?            @db.Date
+  latest_import_date DateTime?
+  latest_export_date DateTime?
+  create_at          DateTime             @default(now())
+  update_at          DateTime             @updatedAt
+  created_by         String
+  last_updated_by    String
   unit_id            Int
-  user               User            @relation(fields: [create_by], references: [id])
-  unit               Unit            @relation(fields: [unit_id], references: [id])
-  MeterialOnReceipt  ReceiptDetail[]
+  active             Boolean              @default(true)
+  user               User                 @relation(fields: [created_by], references: [id])
+  unit               Unit                 @relation(fields: [unit_id], references: [id])
+  Import_Note_Detail Import_Note_Detail[]
+  Export_Note_Detail Export_Note_Detail[]
 }
 
 model Unit {
   id       Int        @id @default(autoincrement())
   name     String
+  short    String?
   Material Material[]
 }
 
 model Provider {
-  id                String          @id @default(uuid())
-  name              String          @unique
-  phone             String?         @unique
-  email             String?         @unique
-  created_at        DateTime        @default(now())
-  updated_at        DateTime        @updatedAt
-  created_by        String
-  user              User            @relation(fields: [created_by], references: [id])
-  MeterialOnReceipt ReceiptDetail[]
+  id              String   @id @default(uuid())
+  name            String   @unique
+  address         String
+  phone           String?  @unique
+  email           String?  @unique
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  last_updated_by String
+  created_by      String
+  active          Boolean  @default(true)
+  User            User     @relation(fields: [created_by], references: [id])
 }
 
-model Receipt {
-  id            Int             @id @default(autoincrement())
-  create_by     String
-  created_at    DateTime        @default(now())
-  total_money   BigInt
-  note          String?
-  status        String
-  ReceiptDetail ReceiptDetail[]
+model Import_Note {
+  id                 Int                  @id @default(autoincrement())
+  receiver_name      String
+  note               String?
+  active             Boolean              @default(true)
+  created_at         DateTime             @default(now())
+  create_by          String
+  provider_id        String
+  user               User                 @relation(fields: [create_by], references: [id])
+  import_note_detail Import_Note_Detail[]
 }
 
-model ReceiptDetail {
-  id          Int      @id @default(autoincrement())
-  material_id Int
-  receipt_id  Int
-  provider_id String
-  price       Int
-  quantity    Int
-  material    Material @relation(fields: [material_id], references: [id])
-  receipt     Receipt  @relation(fields: [receipt_id], references: [id])
-  provider    Provider @relation(fields: [provider_id], references: [id])
+model Import_Note_Detail {
+  id             Int         @id @default(autoincrement())
+  price          Int
+  quantity       Float
+  material_id    Int
+  import_note_id Int
+  material       Material    @relation(fields: [material_id], references: [id])
+  import_note    Import_Note @relation(fields: [import_note_id], references: [id])
+}
+
+model Export_Note {
+  id                 Int                  @id @default(autoincrement())
+  picker_name        String
+  create_by          String
+  create_at          DateTime             @default(now())
+  note               String?
+  active             Boolean              @default(true)
+  User               User                 @relation(fields: [create_by], references: [id])
+  export_note_detail Export_Note_Detail[]
+}
+
+model Export_Note_Detail {
+  id             Int         @id @default(autoincrement())
+  quantity       Float
+  material_id    Int
+  export_note_id Int
+  material       Material    @relation(fields: [material_id], references: [id])
+  export_note    Export_Note @relation(fields: [export_note_id], references: [id])
 }
