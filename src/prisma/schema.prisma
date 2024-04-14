@@ -21,10 +21,10 @@ model User {
   role        String
   created_at  DateTime      @default(now())
   updated_at  DateTime      @updatedAt
-  Material    Material[]
-  Provider    Provider[]
-  Import_Note Import_Note[]
-  Export_Note Export_Note[]
+  material    Material[]
+  provider    Provider[]
+  import_note Import_Note[]
+  export_note Export_Note[]
 }
 
 model Material {
@@ -42,29 +42,30 @@ model Material {
   active             Boolean              @default(true)
   user               User                 @relation(fields: [created_by], references: [id])
   unit               Unit                 @relation(fields: [unit_id], references: [id])
-  Import_Note_Detail Import_Note_Detail[]
-  Export_Note_Detail Export_Note_Detail[]
+  import_note_detail Import_Note_Detail[]
+  export_note_detail Export_Note_Detail[]
 }
 
 model Unit {
   id       Int        @id @default(autoincrement())
   name     String
   short    String?
-  Material Material[]
+  material Material[]
 }
 
 model Provider {
-  id              String   @id @default(uuid())
-  name            String   @unique
+  id              String        @id @default(uuid())
+  name            String        @unique
   address         String
-  phone           String?  @unique
-  email           String?  @unique
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  phone           String?       @unique
+  email           String?       @unique
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
   last_updated_by String
   created_by      String
-  active          Boolean  @default(true)
-  User            User     @relation(fields: [created_by], references: [id])
+  active          Boolean       @default(true)
+  user            User          @relation(fields: [created_by], references: [id])
+  Import_Note     Import_Note[]
 }
 
 model Import_Note {
@@ -73,10 +74,11 @@ model Import_Note {
   note               String?
   active             Boolean              @default(true)
   created_at         DateTime             @default(now())
-  create_by          String
+  created_by         String
   provider_id        String
-  user               User                 @relation(fields: [create_by], references: [id])
+  user               User                 @relation(fields: [created_by], references: [id])
   import_note_detail Import_Note_Detail[]
+  provider           Provider             @relation(fields: [provider_id], references: [id])
 }
 
 model Import_Note_Detail {
@@ -92,11 +94,11 @@ model Import_Note_Detail {
 model Export_Note {
   id                 Int                  @id @default(autoincrement())
   picker_name        String
-  create_by          String
-  create_at          DateTime             @default(now())
+  created_by         String
+  created_at         DateTime             @default(now())
   note               String?
   active             Boolean              @default(true)
-  User               User                 @relation(fields: [create_by], references: [id])
+  user               User                 @relation(fields: [created_by], references: [id])
   export_note_detail Export_Note_Detail[]
 }
 

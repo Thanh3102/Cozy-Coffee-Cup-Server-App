@@ -15,6 +15,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     origin: 'http://localhost:3000',
     credentials: true,
+    exposedHeaders: ["x-filename"],
   });
   app.use(cookieParser());
   dotenv.config();

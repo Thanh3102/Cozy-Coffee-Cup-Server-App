@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { ExportItem } from './../../../../cozy-coffee-cup-client-app/src/utils/types/type.d';
+import { Injectable, Query } from '@nestjs/common';
 import { Import_Note_Detail, Prisma } from '@prisma/client';
+import { Workbook } from 'exceljs';
 import { Response } from 'express';
+import { createWriteStream } from 'fs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomRequest } from 'src/utils/interface';
 import { CreateExportNoteDto, CreateImportNoteDto } from 'src/utils/types';
@@ -33,7 +36,7 @@ export class ImportExportService {
             data: {
               provider_id: dto.provider_id,
               receiver_name: dto.receiver_name,
-              create_by: userId,
+              created_by: userId,
               note: dto.note,
               import_note_detail: {
                 create: noteItem,
@@ -85,14 +88,14 @@ export class ImportExportService {
         quantity: item.quantity,
       }),
     );
-    
+
     try {
       await this.prisma.$transaction(
         async (tx) => {
           const addedNote = await tx.export_Note.create({
             data: {
               picker_name: dto.picker_name,
-              create_by: userId,
+              created_by: userId,
               note: dto.note,
               export_note_detail: {
                 create: noteItem,
@@ -130,5 +133,538 @@ export class ImportExportService {
       console.log(error);
       res.status(500).json({ message: error.message });
     }
+  }
+
+  // async getAll(res: Response) {
+  //   try {
+  //     var responseData = [];
+
+  //     const ImportNotes = await this.prisma.import_Note.findMany({
+  //       select: {
+  //         id: true,
+  //         created_at: true,
+  //         user: {
+  //           select: {
+  //             name: true,
+  //           },
+  //         },
+  //       },
+  //       where: {
+  //         active: true,
+  //       },
+  //     });
+
+  //     const ExportNotes = await this.prisma.export_Note.findMany({
+  //       select: {
+  //         id: true,
+  //         created_at: true,
+  //         user: {
+  //           select: {
+  //             name: true,
+  //           },
+  //         },
+  //       },
+  //       where: {
+  //         active: true,
+  //       },
+  //     });
+
+  //     for (let item of ImportNotes) {
+  //       responseData.push({
+  //         type: 'Nhập kho',
+  //         ...item,
+  //       });
+  //     }
+
+  //     for (let item of ExportNotes) {
+  //       responseData.push({
+  //         type: 'Xuất kho',
+  //         ...item,
+  //       });
+  //     }
+
+  //     responseData.sort((a, b) => {
+  //       if (a.created_at < b.created_at) {
+  //         return 1;
+  //       }
+  //       if (a.created_at > b.created_at) {
+  //         return -1;
+  //       }
+  //       return 0;
+  //     });
+
+  //     return res.status(200).json({ data: responseData });
+  //   } catch (error) {
+  //     console.log(error);
+
+  //     return res.status(500).json({ message: 'Đã xảy ra lỗi' });
+  //   }
+  // }
+
+  async getByFilter(res: Response, { type, start, end, creater_name }) {
+    let ImportNotes = [];
+    let ExportNotes = [];
+    let responseData = [];
+    switch (type) {
+      case 'import':
+        ImportNotes = await this.getImportNoteByFilter(
+          start,
+          end,
+          creater_name,
+        );
+        break;
+      case 'export':
+        ExportNotes = await this.getExportNoteByFilter(
+          start,
+          end,
+          creater_name,
+        );
+        break;
+      default:
+        ImportNotes = await this.getImportNoteByFilter(
+          start,
+          end,
+          creater_name,
+        );
+        ExportNotes = await this.getExportNoteByFilter(
+          start,
+          end,
+          creater_name,
+        );
+    }
+
+    try {
+      for (let item of ImportNotes) {
+        responseData.push({
+          type: 'Nhập kho',
+          ...item,
+        });
+      }
+
+      for (let item of ExportNotes) {
+        responseData.push({
+          type: 'Xuất kho',
+          ...item,
+        });
+      }
+
+      responseData.sort((a, b) => {
+        if (a.created_at < b.created_at) {
+          return 1;
+        }
+        if (a.created_at > b.created_at) {
+          return -1;
+        }
+        return 0;
+      });
+
+      return res.status(200).json({ data: responseData });
+    } catch (error) {
+      console.log(error);
+
+      return res.status(500).json({ message: 'Đã xảy ra lỗi' });
+    }
+  }
+
+  async getImportNoteDetail(id: string, res: Response) {
+    try {
+      const importNote = await this.prisma.import_Note.findUnique({
+        where: {
+          id: parseInt(id),
+        },
+        select: {
+          id: true,
+          receiver_name: true,
+          note: true,
+          created_at: true,
+          user: {
+            select: {
+              name: true,
+            },
+          },
+          import_note_detail: {
+            select: {
+              price: true,
+              quantity: true,
+              material: {
+                select: {
+                  name: true,
+                  unit: true,
+                },
+              },
+            },
+          },
+          provider: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+      if (importNote) {
+        return res.status(200).json({ importNote: importNote });
+      } else {
+        return res.status(500).json({ message: 'Không tìm thấy' });
+      }
+    } catch (error) {
+      console.log(error);
+
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+  async getExportNoteDetail(id: string, res: Response) {
+    try {
+      const exportNote = await this.prisma.export_Note.findUnique({
+        where: {
+          id: parseInt(id),
+        },
+        select: {
+          id: true,
+          picker_name: true,
+          note: true,
+          created_at: true,
+          user: {
+            select: {
+              name: true,
+            },
+          },
+          export_note_detail: {
+            select: {
+              quantity: true,
+              material: {
+                select: {
+                  name: true,
+                  unit: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (exportNote) {
+        return res.status(200).json({ exportNote: exportNote });
+      } else {
+        return res.status(500).json({ message: 'Không tìm thấy' });
+      }
+    } catch (error) {
+      console.log(error);
+
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
+  async deleteImportNote(id: string, res: Response) {
+    try {
+      const importNote = await this.prisma.import_Note.update({
+        data: {
+          active: false,
+        },
+        where: {
+          id: parseInt(id),
+        },
+      });
+      if (importNote) {
+        return res.status(200).json({ message: 'Đã xóa phiếu nhập kho' });
+      }
+    } catch (error) {
+      console.log(error);
+
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
+  async deleteExportNote(id: string, res: Response) {
+    try {
+      const exportNote = await this.prisma.export_Note.update({
+        data: {
+          active: false,
+        },
+        where: {
+          id: parseInt(id),
+        },
+      });
+      if (exportNote) {
+        return res.status(200).json({ message: 'Đã xóa phiếu xuất kho' });
+      }
+    } catch (error) {
+      console.log(error);
+
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
+  async exportImportNoteExcel(res: Response, id: number) {
+    const importNote = await this.prisma.import_Note.findFirst({
+      select: {
+        id: true,
+        created_at: true,
+        receiver_name: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+        provider: {
+          select: {
+            name: true,
+          },
+        },
+        import_note_detail: {
+          select: {
+            material: {
+              select: {
+                name: true,
+                unit: true,
+              },
+            },
+            price: true,
+            quantity: true,
+          },
+        },
+      },
+      where: {
+        id: id,
+      },
+    });
+    const workbook = new Workbook();
+    const sheet = workbook.addWorksheet('Phiếu nhập kho');
+    sheet.mergeCells('A1:F1');
+    sheet.mergeCells('A2:F2');
+    sheet.mergeCells('A3:F3');
+    sheet.mergeCells('A4:F4');
+    sheet.mergeCells('A5:F5');
+    sheet.getCell('A1').value = 'Thông tin phiếu nhập kho';
+    sheet.getCell('A2').value = `Ngày tạo: ${importNote.created_at}`;
+    sheet.getCell('A3').value = `Người nhập kho: ${importNote.receiver_name}`;
+    sheet.getCell('A4').value = `Người tạo phiếu: ${importNote.user.name}`;
+    sheet.getCell('A5').value = `Nhà cung cấp: ${importNote.provider.name}`;
+    sheet.getCell('A1').alignment = { horizontal: 'center' };
+    sheet.getCell('A1').font = {
+      size: 14,
+      bold: true,
+    };
+    sheet.addTable({
+      name: 'Danh sách nguyên liệu',
+      ref: 'A6',
+      headerRow: true,
+      totalsRow: true,
+      style: {
+        theme: 'TableStyleLight5',
+      },
+      columns: [
+        { name: 'STT', totalsRowLabel: 'Tổng' },
+        { name: 'Tên nguyên liệu', filterButton: true },
+        { name: 'Giá tiền' },
+        { name: 'Số lượng' },
+        { name: 'Đơn vị tính' },
+        { name: 'Tổng tiền', totalsRowFunction: 'sum' },
+      ],
+      rows: importNote.import_note_detail.map((item, index) => {
+        return [
+          index + 1,
+          item.material.name,
+          item.price,
+          item.quantity,
+          item.material.unit.name,
+          item.quantity * item.price,
+        ];
+      }),
+    });
+
+    workbook.eachSheet((sheet) => {
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          // default styles
+          if (!cell.font?.size) {
+            cell.font = Object.assign(cell.font || {}, { size: 10 });
+          }
+          if (!cell.font?.name) {
+            cell.font = Object.assign(cell.font || {}, {
+              name: 'Times New Roman',
+            });
+          }
+        });
+      });
+    });
+
+    const filename = `ImportNote-${importNote.id}.xlsx`;
+
+    res.set({
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'x-filename': filename,
+    });
+    await workbook.xlsx.write(res);
+    return res.status(200);
+  }
+
+  async exportExportNoteExcel(res: Response, id: number) {
+    const exportNote = await this.prisma.export_Note.findFirst({
+      select: {
+        id: true,
+        created_at: true,
+        picker_name: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+        export_note_detail: {
+          select: {
+            material: {
+              select: {
+                name: true,
+                unit: true,
+              },
+            },
+            quantity: true,
+          },
+        },
+      },
+      where: {
+        id: id,
+      },
+    });
+    const workbook = new Workbook();
+    const sheet = workbook.addWorksheet('Phiếu xuất kho');
+    sheet.mergeCells('A1:D1');
+    sheet.mergeCells('A2:D2');
+    sheet.mergeCells('A3:D3');
+    sheet.mergeCells('A4:D4');
+    sheet.getCell('A1').value = 'Thông tin phiếu xuất kho';
+    sheet.getCell('A2').value = `Ngày tạo: ${exportNote.created_at}`;
+    sheet.getCell('A3').value = `Người tạo phiếu: ${exportNote.user.name}`;
+    sheet.getCell('A4').value = `Người lấy hàng: ${exportNote.picker_name}`;
+    sheet.getCell('A1').alignment = { horizontal: 'center' };
+    sheet.getCell('A1').font = {
+      size: 14,
+      bold: true,
+    };
+    sheet.addTable({
+      name: 'Danh sách nguyên liệu',
+      ref: 'A5',
+      headerRow: true,
+      style: {
+        theme: 'TableStyleLight5',
+      },
+      columns: [
+        { name: 'STT' },
+        { name: 'Tên nguyên liệu', filterButton: true },
+        { name: 'Số lượng' },
+        { name: 'Đơn vị tính' },
+      ],
+      rows: exportNote.export_note_detail.map((item, index) => {
+        return [
+          index + 1,
+          item.material.name,
+          item.quantity,
+          item.material.unit.name,
+        ];
+      }),
+    });
+
+    workbook.eachSheet((sheet) => {
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          // default styles
+          if (!cell.font?.size) {
+            cell.font = Object.assign(cell.font || {}, { size: 10 });
+          }
+          if (!cell.font?.name) {
+            cell.font = Object.assign(cell.font || {}, {
+              name: 'Times New Roman',
+            });
+          }
+        });
+      });
+    });
+
+    const filename = `ExportNote-${exportNote.id}.xlsx`;
+
+    res.set({
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'x-filename': filename,
+    });
+    await workbook.xlsx.write(res);
+    return res.status(200);
+  }
+
+  private async getImportNoteByFilter(start, end, creater_name) {
+    const conditons: any = {
+      active: true,
+    };
+    if (start) {
+      conditons.created_at = {
+        gte: new Date(start),
+        ...conditons.created_at,
+      };
+    }
+    if (end) {
+      conditons.created_at = {
+        lte: new Date(end),
+        ...conditons.created_at,
+      };
+    }
+    if (creater_name) {
+      conditons.user = {
+        name: {
+          equals: creater_name,
+        },
+      };
+    }
+
+    return await this.prisma.import_Note.findMany({
+      where: conditons,
+      select: {
+        id: true,
+        created_at: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  private async getExportNoteByFilter(start, end, creater_name) {
+    const conditons: any = {
+      active: true,
+    };
+    if (start) {
+      conditons.created_at = {
+        gte: new Date(start),
+        ...conditons.created_at,
+      };
+    }
+    if (end) {
+      conditons.created_at = {
+        lte: new Date(end),
+        ...conditons.created_at,
+      };
+    }
+    if (creater_name) {
+      conditons.user = {
+        name: {
+          equals: creater_name,
+        },
+      };
+    }
+
+    return await this.prisma.export_Note.findMany({
+      where: conditons,
+      select: {
+        id: true,
+        created_at: true,
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
   }
 }
