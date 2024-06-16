@@ -5,6 +5,8 @@ export class AddMaterialDto {
   @IsNotEmpty()
   @IsNumber()
   stock_quantity: number;
+  @IsNumber()
+  min_stock: number;
   expiration_date: Date;
   @IsNotEmpty()
   @IsNumber()
@@ -20,10 +22,26 @@ export class UpdateMaterialDto {
   @IsNotEmpty()
   @IsNumber()
   stock_quantity: number;
+  @IsNumber()
+  min_stock: number;
   expiration_date: Date;
   @IsNotEmpty()
   @IsNumber()
   unit_id: number;
   @IsBoolean()
   active: boolean;
+}
+
+export class CreateUnitDto {
+  @IsNotEmpty()
+  name: string;
+  short: string;
+}
+
+export class UpdateUnitDto {
+  @IsNotEmpty()
+  id: number;
+  @IsNotEmpty()
+  name: string;
+  short: string;
 }

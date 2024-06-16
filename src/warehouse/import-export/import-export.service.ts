@@ -1,9 +1,7 @@
-import { ExportItem } from './../../../../cozy-coffee-cup-client-app/src/utils/types/type.d';
-import { Injectable, Query } from '@nestjs/common';
-import { Import_Note_Detail, Prisma } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Workbook } from 'exceljs';
 import { Response } from 'express';
-import { createWriteStream } from 'fs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomRequest } from 'src/utils/interface';
 import { CreateExportNoteDto, CreateImportNoteDto } from 'src/utils/types';
@@ -32,12 +30,13 @@ export class ImportExportService {
     try {
       await this.prisma.$transaction(
         async (tx) => {
-          const addedNote = await tx.import_Note.create({
+          const addedNote = await tx.importNote.create({
             data: {
               provider_id: dto.provider_id,
               receiver_name: dto.receiver_name,
               created_by: userId,
               note: dto.note,
+              total: dto.total,
               import_note_detail: {
                 create: noteItem,
               },
@@ -92,7 +91,7 @@ export class ImportExportService {
     try {
       await this.prisma.$transaction(
         async (tx) => {
-          const addedNote = await tx.export_Note.create({
+          const addedNote = await tx.exportNote.create({
             data: {
               picker_name: dto.picker_name,
               created_by: userId,
@@ -139,7 +138,7 @@ export class ImportExportService {
   //   try {
   //     var responseData = [];
 
-  //     const ImportNotes = await this.prisma.import_Note.findMany({
+  //     const ImportNotes = await this.prisma.importNote.findMany({
   //       select: {
   //         id: true,
   //         created_at: true,
@@ -154,7 +153,7 @@ export class ImportExportService {
   //       },
   //     });
 
-  //     const ExportNotes = await this.prisma.export_Note.findMany({
+  //     const ExportNotes = await this.prisma.exportNote.findMany({
   //       select: {
   //         id: true,
   //         created_at: true,
@@ -268,7 +267,7 @@ export class ImportExportService {
 
   async getImportNoteDetail(id: string, res: Response) {
     try {
-      const importNote = await this.prisma.import_Note.findUnique({
+      const importNote = await this.prisma.importNote.findUnique({
         where: {
           id: parseInt(id),
         },
@@ -314,7 +313,7 @@ export class ImportExportService {
   }
   async getExportNoteDetail(id: string, res: Response) {
     try {
-      const exportNote = await this.prisma.export_Note.findUnique({
+      const exportNote = await this.prisma.exportNote.findUnique({
         where: {
           id: parseInt(id),
         },
@@ -355,7 +354,7 @@ export class ImportExportService {
 
   async deleteImportNote(id: string, res: Response) {
     try {
-      const importNote = await this.prisma.import_Note.update({
+      const importNote = await this.prisma.importNote.update({
         data: {
           active: false,
         },
@@ -375,7 +374,7 @@ export class ImportExportService {
 
   async deleteExportNote(id: string, res: Response) {
     try {
-      const exportNote = await this.prisma.export_Note.update({
+      const exportNote = await this.prisma.exportNote.update({
         data: {
           active: false,
         },
@@ -394,7 +393,7 @@ export class ImportExportService {
   }
 
   async exportImportNoteExcel(res: Response, id: number) {
-    const importNote = await this.prisma.import_Note.findFirst({
+    const importNote = await this.prisma.importNote.findFirst({
       select: {
         id: true,
         created_at: true,
@@ -500,7 +499,7 @@ export class ImportExportService {
   }
 
   async exportExportNoteExcel(res: Response, id: number) {
-    const exportNote = await this.prisma.export_Note.findFirst({
+    const exportNote = await this.prisma.exportNote.findFirst({
       select: {
         id: true,
         created_at: true,
@@ -616,7 +615,7 @@ export class ImportExportService {
       };
     }
 
-    return await this.prisma.import_Note.findMany({
+    return await this.prisma.importNote.findMany({
       where: conditons,
       select: {
         id: true,
@@ -654,7 +653,7 @@ export class ImportExportService {
       };
     }
 
-    return await this.prisma.export_Note.findMany({
+    return await this.prisma.exportNote.findMany({
       where: conditons,
       select: {
         id: true,

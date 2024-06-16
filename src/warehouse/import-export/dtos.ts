@@ -16,6 +16,8 @@ export class CreateImportNoteDto {
   note: string;
   @IsNotEmpty()
   provider_id: string;
+  @IsNotEmpty()
+  total: number;
   @ValidateNested({ each: true })
   @Type(() => ImportNoteItem)
   import_note_detail: ImportNoteItem[];

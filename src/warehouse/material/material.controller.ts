@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -13,7 +14,12 @@ import { Request, Response } from 'express';
 import { MaterialService } from './material.service';
 import { AuthGuard } from 'src/guards/auth/auth.guard';
 import { CustomRequest } from 'src/utils/interface';
-import { AddMaterialDto, UpdateMaterialDto } from './dtos';
+import {
+  AddMaterialDto,
+  CreateUnitDto,
+  UpdateMaterialDto,
+  UpdateUnitDto,
+} from './dtos';
 
 @Controller('/api/material')
 @UseGuards(AuthGuard)
@@ -40,8 +46,22 @@ export class MaterialController {
   }
 
   @Get('/getUnits')
-  getUnits(@Res() res: Response) {
-    return this.materialService.getUnits(res);
+  getUnits(@Res() res: Response, @Query('q') query: string) {
+    return this.materialService.getUnits(query, res);
+  }
+
+  @Post('/createUnit')
+  createUnit(@Body() dto: CreateUnitDto, @Res() res: Response) {
+    return this.materialService.createUnit(dto, res);
+  }
+
+  @Post('updateUnit')
+  updateUnit(@Body() dto: UpdateUnitDto, @Res() res: Response) {
+    return this.materialService.updateUnit(dto, res);
+  }
+  @Delete('/deleteUnit')
+  deleteUnit(@Query('id') id: string, @Res() res: Response) {
+    return this.materialService.deleteUnit(parseInt(id), res);
   }
 
   @Post('/addMaterial')

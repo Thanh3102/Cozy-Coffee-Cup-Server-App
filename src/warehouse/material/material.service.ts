@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { contains } from 'class-validator';
 import { Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CustomRequest } from 'src/utils/interface';
-import { AddMaterialDto, UpdateMaterialDto } from 'src/utils/types';
+import {
+  AddMaterialDto,
+  CreateUnitDto,
+  UpdateMaterialDto,
+  UpdateUnitDto,
+} from 'src/utils/types';
 
 @Injectable()
 export class MaterialService {
@@ -23,6 +29,7 @@ export class MaterialService {
             name: true,
             stock_quantity: true,
             expiration_date: true,
+            min_stock: true,
             latest_export_date: true,
             latest_import_date: true,
             unit: true,
@@ -80,9 +87,91 @@ export class MaterialService {
     return res.status(200).json({ data: materials });
   }
 
-  async getUnits(res: Response) {
-    const units = await this.prisma.unit.findMany();
+  async getUnits(query: string, res: Response) {
+    let whereCondition = {};
+    if (query) {
+      whereCondition = {
+        OR: [
+          {
+            name: {
+              contains: query ?? undefined,
+            },
+          },
+          {
+            short: {
+              contains: query ?? undefined,
+            },
+          },
+        ],
+        ...whereCondition,
+      };
+    }
+    const units = await this.prisma.unit.findMany({
+      where: {
+        ...whereCondition,
+      },
+    });
     return res.status(200).json({ data: units });
+  }
+
+  async updateUnit(dto: UpdateUnitDto, res: Response) {
+    try {
+      await this.prisma.unit.update({
+        where: {
+          id: dto.id,
+        },
+        data: {
+          name: dto.name,
+          short: dto.short ?? null,
+        },
+      });
+      return res.status(200).json({ message: 'Cập nhật thành công' });
+    } catch (error: any) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
+  async deleteUnit(id: number, res: Response) {
+    try {
+      const material = await this.prisma.material.findFirst({
+        where: {
+          unit_id: id,
+        },
+      });
+
+      if (material) {
+        return res
+          .status(500)
+          .json({ message: 'Không thể xóa do đơn vị đang được sử dụng' });
+      }
+
+      await this.prisma.unit.delete({
+        where: { id },
+      });
+
+      return res.status(200).json({ message: 'Xóa thành công' });
+    } catch (error: any) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
+  async createUnit(dto: CreateUnitDto, res: Response) {
+    try {
+      const unit = await this.prisma.unit.create({
+        data: {
+          name: dto.name,
+          short: dto.short,
+        },
+      });
+      if (unit) {
+        return res.status(200).json({ message: 'Thêm thành công' });
+      }
+    } catch (error: any) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
   }
 
   async addMaterial(dto: AddMaterialDto, user_id: string, res: Response) {
@@ -91,6 +180,7 @@ export class MaterialService {
         name: dto.name,
         expiration_date: dto.expiration_date ? dto.expiration_date : null,
         stock_quantity: dto.stock_quantity,
+        min_stock: dto.min_stock,
         unit_id: dto.unit_id,
         created_by: user_id,
         last_updated_by: user_id,
@@ -115,6 +205,7 @@ export class MaterialService {
           expiration_date: dto.expiration_date,
           stock_quantity: dto.stock_quantity,
           unit_id: dto.unit_id,
+          min_stock: dto.min_stock,
           last_updated_by: user_id,
           active: dto.active,
         },
