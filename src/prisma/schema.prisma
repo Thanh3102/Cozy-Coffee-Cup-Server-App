@@ -14,36 +14,43 @@ datasource db {
 }
 
 model User {
-  id          String        @id @default(uuid())
-  username    String        @unique
+  id          String       @id @default(uuid())
+  username    String       @unique
   password    String
   name        String
   role        String
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
+  void        Boolean      @default(false)
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
   material    Material[]
   provider    Provider[]
-  import_note Import_Note[]
-  export_note Export_Note[]
+  import_note ImportNote[]
+  export_note ExportNote[]
+  order       Order[]
+
+  @@map("users")
 }
 
 model Material {
-  id                 Int                  @id @default(autoincrement())
-  name               String               @unique
+  id                 Int                @id @default(autoincrement())
+  name               String             @unique
   stock_quantity     Int
-  expiration_date    DateTime?            @db.Date
+  expiration_date    DateTime?          @db.Date
   latest_import_date DateTime?
   latest_export_date DateTime?
-  create_at          DateTime             @default(now())
-  update_at          DateTime             @updatedAt
+  min_stock          Int                @default(0)
+  create_at          DateTime           @default(now())
+  update_at          DateTime           @updatedAt
   created_by         String
   last_updated_by    String
   unit_id            Int
-  active             Boolean              @default(true)
-  user               User                 @relation(fields: [created_by], references: [id])
-  unit               Unit                 @relation(fields: [unit_id], references: [id])
-  import_note_detail Import_Note_Detail[]
-  export_note_detail Export_Note_Detail[]
+  active             Boolean            @default(true)
+  user               User               @relation(fields: [created_by], references: [id])
+  unit               Unit               @relation(fields: [unit_id], references: [id])
+  import_note_detail ImportNoteDetail[]
+  export_note_detail ExportNoteDetail[]
+
+  @@map("materials")
 }
 
 model Unit {
@@ -51,62 +58,240 @@ model Unit {
   name     String
   short    String?
   material Material[]
+
+  @@map("units")
 }
 
 model Provider {
-  id              String        @id @default(uuid())
-  name            String        @unique
+  id              String       @id @default(uuid())
+  name            String       @unique
   address         String
-  phone           String?       @unique
-  email           String?       @unique
-  created_at      DateTime      @default(now())
-  updated_at      DateTime      @updatedAt
+  phone           String?      @unique
+  email           String?      @unique
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
   last_updated_by String
   created_by      String
-  active          Boolean       @default(true)
-  user            User          @relation(fields: [created_by], references: [id])
-  Import_Note     Import_Note[]
+  active          Boolean      @default(true)
+  user            User         @relation(fields: [created_by], references: [id])
+  import_note     ImportNote[]
+
+  @@map("providers")
 }
 
-model Import_Note {
-  id                 Int                  @id @default(autoincrement())
+model ImportNote {
+  id                 Int                @id @default(autoincrement())
   receiver_name      String
   note               String?
-  active             Boolean              @default(true)
-  created_at         DateTime             @default(now())
+  total              Int
+  active             Boolean            @default(true)
+  created_at         DateTime           @default(now())
   created_by         String
   provider_id        String
-  user               User                 @relation(fields: [created_by], references: [id])
-  import_note_detail Import_Note_Detail[]
-  provider           Provider             @relation(fields: [provider_id], references: [id])
+  user               User               @relation(fields: [created_by], references: [id])
+  import_note_detail ImportNoteDetail[]
+  provider           Provider           @relation(fields: [provider_id], references: [id])
+
+  @@map("import_notes")
 }
 
-model Import_Note_Detail {
-  id             Int         @id @default(autoincrement())
+model ImportNoteDetail {
+  id             Int        @id @default(autoincrement())
   price          Int
   quantity       Float
   material_id    Int
   import_note_id Int
-  material       Material    @relation(fields: [material_id], references: [id])
-  import_note    Import_Note @relation(fields: [import_note_id], references: [id])
+  material       Material   @relation(fields: [material_id], references: [id])
+  import_note    ImportNote @relation(fields: [import_note_id], references: [id], onDelete: Cascade)
+
+  @@map("import_note_details")
 }
 
-model Export_Note {
-  id                 Int                  @id @default(autoincrement())
+model ExportNote {
+  id                 Int                @id @default(autoincrement())
   picker_name        String
   created_by         String
-  created_at         DateTime             @default(now())
+  created_at         DateTime           @default(now())
   note               String?
-  active             Boolean              @default(true)
-  user               User                 @relation(fields: [created_by], references: [id])
-  export_note_detail Export_Note_Detail[]
+  active             Boolean            @default(true)
+  user               User               @relation(fields: [created_by], references: [id])
+  export_note_detail ExportNoteDetail[]
+
+  @@map("export_notes")
 }
 
-model Export_Note_Detail {
-  id             Int         @id @default(autoincrement())
+model ExportNoteDetail {
+  id             Int        @id @default(autoincrement())
   quantity       Float
   material_id    Int
   export_note_id Int
-  material       Material    @relation(fields: [material_id], references: [id])
-  export_note    Export_Note @relation(fields: [export_note_id], references: [id])
+  material       Material   @relation(fields: [material_id], references: [id])
+  export_note    ExportNote @relation(fields: [export_note_id], references: [id], onDelete: Cascade)
+
+  @@map("export_note_details")
+}
+
+model Product {
+  id                 Int                 @id @default(autoincrement())
+  name               String              @unique
+  price              Int
+  image              String?             @unique
+  description        String?             @db.Text
+  category_id        Int?                @default(1)
+  type_id            Int                 @default(1)
+  status             Boolean             @default(true)
+  note               String?
+  discount           Int                 @default(0)
+  void               Boolean             @default(false)
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  category           Category?           @relation(fields: [category_id], references: [id])
+  type               ProductType         @relation(fields: [type_id], references: [id])
+  options            ProductOption[]
+  order_item         OrderItem[]
+  product_statistics ProductStatistics[]
+
+  @@map("products")
+}
+
+model Category {
+  id      Int       @id @default(autoincrement())
+  name    String    @unique
+  product Product[]
+
+  @@map("categories")
+}
+
+model ProductType {
+  id      Int       @id @default(autoincrement())
+  name    String    @unique
+  Product Product[]
+
+  @@map("product_types")
+}
+
+model ProductOption {
+  id                   Int                     @id @default(autoincrement())
+  option_id            Int
+  product_id           Int
+  product              Product                 @relation(fields: [product_id], references: [id])
+  defination_option    ProductOptionDefination @relation(fields: [option_id], references: [id])
+  product_option_value ProductOptionValue[]
+
+  @@map("product_options")
+}
+
+model ProductOptionValue {
+  id                      Int                          @id @default(autoincrement())
+  product_option_id       Int
+  option_value_id         Int
+  product_option          ProductOption                @relation(fields: [product_option_id], references: [id], onDelete: Cascade)
+  defination_option_value ProductOptionDefinationValue @relation(fields: [option_value_id], references: [id])
+
+  @@map("product_option_values")
+}
+
+model ProductOptionDefination {
+  id              Int                            @id @default(autoincrement())
+  title           String                         @unique
+  required        Boolean                        @default(false)
+  allows_multiple Boolean                        @default(true)
+  values          ProductOptionDefinationValue[]
+  product_option  ProductOption[]
+
+  @@map("product_option_definations")
+}
+
+model ProductOptionDefinationValue {
+  id                   Int                     @id @default(autoincrement())
+  name                 String
+  price                Int
+  p_option_id          Int
+  product_option       ProductOptionDefination @relation(fields: [p_option_id], references: [id])
+  product_option_value ProductOptionValue[]
+
+  @@map("product_option_defination_values")
+}
+
+model StatisticsByDay {
+  id              Int      @id @default(autoincrement())
+  statistics_date DateTime @unique @db.Date
+  revenue         BigInt   @default(0) @db.UnsignedBigInt
+  number_of_order Int      @default(0)
+
+  @@map("statistics_by_day")
+}
+
+model ProductStatistics {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  sale_date  DateTime @db.Date
+  sold       Int      @default(0)
+  revenue    BigInt   @default(0)
+  product    Product  @relation(fields: [product_id], references: [id])
+
+  @@unique([product_id, sale_date])
+  @@map("product_statistics")
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  total      Int         @default(0)
+  type       String
+  status     String
+  payment_id Int?
+  note       String?
+  void       Boolean     @default(false)
+  created_by String
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+  payment_at DateTime?
+  user       User        @relation(fields: [created_by], references: [id])
+  orderItems OrderItem[]
+  payment    Payment?    @relation(fields: [payment_id], references: [id])
+
+  @@map("orders")
+}
+
+model Payment {
+  id    Int     @id @default(autoincrement())
+  type  String  @unique
+  order Order[]
+
+  @@map("payments")
+}
+
+model OrderItem {
+  id                 Int               @id @default(autoincrement())
+  quantity           Int
+  price              Int
+  discount           Int
+  is_gift            Boolean
+  product_id         Int
+  order_id           Int
+  order              Order             @relation(fields: [order_id], references: [id])
+  product            Product           @relation(fields: [product_id], references: [id])
+  order_item_options OrderItemOption[]
+
+  @@map("order_items")
+}
+
+model OrderItemOption {
+  id                       Int                    @id @default(autoincrement())
+  title                    String
+  order_item_id            Int
+  order_item               OrderItem              @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+  order_item_option_values OrderItemOptionValue[]
+
+  @@map("order_item_options")
+}
+
+model OrderItemOptionValue {
+  id                   Int             @id @default(autoincrement())
+  name                 String
+  price                Int
+  order_item_option_id Int
+  order_ite_option     OrderItemOption @relation(fields: [order_item_option_id], references: [id], onDelete: Cascade)
+
+  @@map("order_item_option_values")
 }
