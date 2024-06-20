@@ -196,8 +196,8 @@ model ProductOptionDefination {
   title           String                         @unique
   required        Boolean                        @default(false)
   allows_multiple Boolean                        @default(true)
-  values          ProductOptionDefinationValue[]
-  product_option  ProductOption[]
+  values          ProductOptionDefinationValue[] 
+  product_option  ProductOption[]                
 
   @@map("product_option_definations")
 }

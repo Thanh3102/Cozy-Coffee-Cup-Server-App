@@ -1,4 +1,3 @@
-import { ProductOption } from './../../../cozy-coffee-cup-client-app/src/utils/types/type';
 import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -319,7 +318,7 @@ export class ProductService {
     try {
       await this.prisma.$transaction(
         async (tx) => {
-          const { id } = req.user;
+          // const { id } = req.user;
           const product = await tx.product.findFirst({
             where: {
               id: parseInt(dto.id),
@@ -337,7 +336,7 @@ export class ProductService {
                 .status(500)
                 .json({ message: 'Tên sản phẩm đã tồn tại' });
           }
-          const updateProduct = await tx.product.update({
+          await tx.product.update({
             data: {
               name: dto.name,
               price: parseInt(dto.price),

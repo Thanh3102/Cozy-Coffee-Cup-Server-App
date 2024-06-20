@@ -24,7 +24,7 @@ import {
   UpdateProductDto,
   UpdateProductOptionDto,
   UpdateProductTypeDto,
-} from './dtos';
+} from '../dtos/product.dtos';
 import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { CustomRequest } from 'src/utils/interface';
 

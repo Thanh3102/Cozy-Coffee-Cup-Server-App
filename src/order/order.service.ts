@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateOrderDto } from './dtos';
+import { CreateOrderDto } from '../dtos/order.dtos';
 import { CustomRequest } from 'src/utils/interface';
 import { OrderStatus } from 'src/utils/enum';
 import { PayOrderDto, UpdateOrderDto } from 'src/utils/types';

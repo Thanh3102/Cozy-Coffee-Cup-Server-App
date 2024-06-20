@@ -1,5 +1,5 @@
 import { CustomRequest } from 'src/utils/interface';
-import { CreateExportNoteDto, CreateImportNoteDto } from './dtos';
+import { CreateExportNoteDto, CreateImportNoteDto } from '../../dtos/import_export.dtos';
 import { ImportExportService } from './import-export.service';
 import {
   Body,

@@ -175,20 +175,22 @@ export class MaterialService {
   }
 
   async addMaterial(dto: AddMaterialDto, user_id: string, res: Response) {
-    const addedMaterial = await this.prisma.material.create({
-      data: {
-        name: dto.name,
-        expiration_date: dto.expiration_date ? dto.expiration_date : null,
-        stock_quantity: dto.stock_quantity,
-        min_stock: dto.min_stock,
-        unit_id: dto.unit_id,
-        created_by: user_id,
-        last_updated_by: user_id,
-      },
-    });
-    if (addedMaterial) {
-      console.log('Add success');
-      return res.status(200).json({ data: { addedMaterial } });
+    try {
+      const addedMaterial = await this.prisma.material.create({
+        data: {
+          name: dto.name,
+          expiration_date: dto.expiration_date ? dto.expiration_date : null,
+          stock_quantity: dto.stock_quantity,
+          min_stock: dto.min_stock,
+          unit_id: dto.unit_id,
+          created_by: user_id,
+          last_updated_by: user_id,
+        },
+      });
+      return res.status(200).json({ message: 'Thêm thành công' });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
     }
   }
 
@@ -223,26 +225,31 @@ export class MaterialService {
   }
 
   async search(keyword: string, res: Response) {
-    const materials = await this.prisma.material.findMany({
-      select: {
-        id: true,
-        name: true,
-        stock_quantity: true,
-        expiration_date: true,
-        latest_export_date: true,
-        latest_import_date: true,
-        unit: true,
-        active: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-      where: {
-        name: {
-          contains: keyword,
+    try {
+      const materials = await this.prisma.material.findMany({
+        select: {
+          id: true,
+          name: true,
+          stock_quantity: true,
+          expiration_date: true,
+          latest_export_date: true,
+          latest_import_date: true,
+          unit: true,
+          active: true,
         },
-      },
-    });
-    return res.status(200).json({ materials: materials });
+        orderBy: {
+          name: 'asc',
+        },
+        where: {
+          name: {
+            contains: keyword,
+          },
+        },
+      });
+      return res.status(200).json({ materials: materials });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
   }
 }

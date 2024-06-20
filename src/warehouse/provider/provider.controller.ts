@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ProviderService } from './provider.service';
 import { Request, Response } from 'express';
-import { CreateProviderDto, UpdateProviderDto } from './dtos';
+import { CreateProviderDto, UpdateProviderDto } from '../../dtos/provider.dtos';
 import { CustomRequest } from 'src/utils/interface';
 import { AuthGuard } from 'src/guards/auth/auth.guard';
 

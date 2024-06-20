@@ -10,7 +10,11 @@ import {
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { Response } from 'express';
-import { CreateOrderDto, PayOrderDto, UpdateOrderDto } from './dtos';
+import {
+  CreateOrderDto,
+  PayOrderDto,
+  UpdateOrderDto,
+} from '../dtos/order.dtos';
 import { CustomRequest } from 'src/utils/interface';
 import { AuthGuard } from 'src/guards/auth/auth.guard';
 

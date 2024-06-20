@@ -19,7 +19,7 @@ import {
   CreateUnitDto,
   UpdateMaterialDto,
   UpdateUnitDto,
-} from './dtos';
+} from '../../dtos/material.dtos';
 
 @Controller('/api/material')
 @UseGuards(AuthGuard)
