@@ -24,7 +24,6 @@ export class CreateOrderDto {
 export class UpdateOrderDto {
   @IsNotEmpty()
   id: number;
-  @IsNotEmpty()
   note: string;
   @IsNotEmpty()
   type: string;

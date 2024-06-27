@@ -14,6 +14,21 @@ export class AuthService {
   async signIn(signInDto: SignInDto, res: ResponseType) {
     const { username, password } = signInDto;
     const user = await this.prisma.user.findFirst({
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        password: true,
+        user_role: {
+          select: {
+            role: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
       where: {
         username: username,
       },
@@ -24,12 +39,10 @@ export class AuthService {
           id: string;
           username: string;
           name: string;
-          role: string;
         } = {
           id: user.id,
           username: user.name,
           name: user.name,
-          role: user.role,
         };
 
         const accessToken = await this.jwtService.sign(
@@ -45,18 +58,15 @@ export class AuthService {
             expiresIn: process.env.REFRESH_TOKEN_EXPIRE_TIME,
           },
         );
+
         res.cookie('refreshToken', refreshToken, {
           maxAge: parseInt(process.env.REFRESH_TOKEN_MAX_AGE),
           httpOnly: true,
         });
+
         return res.status(200).json({
           accessToken: accessToken,
-          user: {
-            id: user.id,
-            username: user.name,
-            name: user.name,
-            role: user.role,
-          },
+          user: payload,
         });
       }
       return res.status(400).json({ message: 'Mật khẩu không chính xác' });
@@ -65,7 +75,6 @@ export class AuthService {
     }
   }
   async logout(res: ResponseType) {
-
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     return res.status(200).json({

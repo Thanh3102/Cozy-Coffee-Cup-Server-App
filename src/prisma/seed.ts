@@ -1,8 +1,35 @@
-import { PrismaClient} from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { DefaultArgs } from '@prisma/client/runtime/library';
 import * as bcrypt from 'bcrypt';
 
-enum Role {
-  ADMIN = 'ADMIN',
+enum Permission {
+  Account_View = 'Account_View',
+  Account_Create = 'Account_Create',
+  Account_Edit = 'Account_Create',
+  Account_Role_Create = 'Account_Role_Create',
+  Account_Role_Edit = 'Account_Role_Edit',
+
+  Order_View = 'Order_View',
+  Order_Create = 'Order_Create',
+  Order_Edit = 'Order_Edit',
+  Order_Pay = 'Order_Pay',
+
+  Product_View = 'Product_View',
+  Product_Create = 'Product_Create',
+  Product_Edit = 'Product_Edit',
+
+  Warehouse_View = 'Warehouse_View',
+  Warehouse_Material_Create = 'Warehouse_Material_Create',
+  Warehouse_Material_Edit = 'Warehouse_Material_Edit',
+  Warehouse_Provider_Create = 'Warehouse_Provider_Create',
+  Warehouse_Provider_Edit = 'Warehouse_Provider_Edit',
+  Warehouse_ImportNote_Create = 'Warehouse_ImportNote_Create',
+  Warehouse_ExportNote_Create = 'Warehouse_ExportNote_Create',
+  Warehouse_Note_Delete = 'Warehouse_Note_Delete',
+
+  Definition_View = 'Definition_View',
+  Definition_Create = 'Definition_Create',
+  Definition_Edit = 'Definition_Edit',
 }
 
 function randomDateTime() {
@@ -54,13 +81,63 @@ const deleteTableRecord = async (prisma: any) => {
   await prisma.$queryRaw`ALTER TABLE statistics_by_day AUTO_INCREMENT = 1`;
 };
 
-const createUser = async (prisma) => {
-  await prisma.user.create({
+const createPermission = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
+  for (let perm in Permission) {
+    await prisma.permission.create({
+      data: {
+        name: perm,
+      },
+    });
+  }
+};
+
+const createUser = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
+  const perms = await prisma.permission.findMany({
+    select: {
+      id: true,
+    },
+  });
+
+  const user = await prisma.user.create({
     data: {
       username: 'admin',
       password: await bcrypt.hash('123456', 10),
       name: 'admin',
-      role: Role.ADMIN,
+    },
+  });
+
+  const role = await prisma.role.create({
+    data: {
+      name: 'Admin',
+      color: '#EE4E4E',
+      created_by: user.id,
+      updated_by: user.id,
+    },
+  });
+
+  for (let perm of perms) {
+    await prisma.rolePermission.create({
+      data: {
+        permission_id: perm.id,
+        role_id: role.id,
+      },
+    });
+  }
+
+  await prisma.userRole.create({
+    data: {
+      role_id: role.id,
+      user_id: user.id,
     },
   });
 };
@@ -233,14 +310,15 @@ const createDayStatistic = async (prisma) => {
 async function main() {
   try {
     await prisma.$transaction(async (p) => {
-      await deleteTableRecord(p);
-      await createUser(p);
-      await createUnit(p);
-      await createProvider(p);
-      await createCategories(p);
-      await createMaterial(p);
-      await createPayment(p);
-      await createDayStatistic(p);
+      // await deleteTableRecord(p);
+      // await createPermission(p);
+      // await createUser(p);
+      // await createUnit(p);
+      // await createProvider(p);
+      // await createCategories(p);
+      // await createMaterial(p);
+      // await createPayment(p);
+      // await createDayStatistic(p);
     });
   } catch (error) {
     console.log(error);

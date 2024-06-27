@@ -13,22 +13,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Role {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  color           String
+  created_by      String
+  created_at      DateTime         @default(now())
+  updated_by      String          
+  updated_at      DateTime         @updatedAt
+  role_permission RolePermission[]
+  user_role       UserRole[]
+  user            User             @relation(fields: [created_by], references: [id])
+
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  role_permission RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id            Int        @id @default(autoincrement())
+  role_id       String
+  permission_id String
+  role          Role       @relation(fields: [role_id], references: [id])
+  permission    Permission @relation(fields: [permission_id], references: [id])
+
+  @@map("role_permission")
+}
+
 model User {
-  id          String       @id @default(uuid())
-  username    String       @unique
-  password    String
-  name        String
-  role        String
-  void        Boolean      @default(false)
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-  material    Material[]
-  provider    Provider[]
-  import_note ImportNote[]
-  export_note ExportNote[]
-  order       Order[]
+  id           String       @id @default(uuid())
+  username     String       
+  password     String
+  name         String
+  void         Boolean      @default(false)
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  material     Material[]
+  provider     Provider[]
+  import_note  ImportNote[]
+  export_note  ExportNote[]
+  create_order Order[]      @relation(name: "createOrderUser")
+  pay_order    Order[]      @relation(name: "payOrderUser")
+  user_role    UserRole[]
+  Role         Role[]
 
   @@map("users")
+}
+
+model UserRole {
+  id      Int    @id @default(autoincrement())
+  user_id String
+  role_id String
+  user    User   @relation(fields: [user_id], references: [id])
+  role    Role   @relation(fields: [role_id], references: [id])
+
+  @@map("user_role")
 }
 
 model Material {
@@ -196,8 +241,8 @@ model ProductOptionDefination {
   title           String                         @unique
   required        Boolean                        @default(false)
   allows_multiple Boolean                        @default(true)
-  values          ProductOptionDefinationValue[] 
-  product_option  ProductOption[]                
+  values          ProductOptionDefinationValue[]
+  product_option  ProductOption[]
 
   @@map("product_option_definations")
 }
@@ -235,20 +280,22 @@ model ProductStatistics {
 }
 
 model Order {
-  id         Int         @id @default(autoincrement())
-  total      Int         @default(0)
-  type       String
-  status     String
-  payment_id Int?
-  note       String?
-  void       Boolean     @default(false)
-  created_by String
-  created_at DateTime    @default(now())
-  updated_at DateTime    @updatedAt
-  payment_at DateTime?
-  user       User        @relation(fields: [created_by], references: [id])
-  orderItems OrderItem[]
-  payment    Payment?    @relation(fields: [payment_id], references: [id])
+  id          Int         @id @default(autoincrement())
+  total       Int         @default(0)
+  type        String
+  status      String
+  payment_id  Int?
+  note        String?
+  void        Boolean     @default(false)
+  created_by  String
+  payment_by  String?
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  payment_at  DateTime?
+  user        User        @relation(fields: [created_by], references: [id], name: "createOrderUser")
+  paymentUser User?       @relation(fields: [payment_by], references: [id], name: "payOrderUser")
+  orderItems  OrderItem[]
+  payment     Payment?    @relation(fields: [payment_id], references: [id])
 
   @@map("orders")
 }

@@ -42,6 +42,7 @@ export class OrderService {
           note: true,
           created_at: true,
           status: true,
+          type: true,
         },
       });
       return res.status(200).json({ orders: orders });
@@ -62,6 +63,8 @@ export class OrderService {
         status: true,
         note: true,
         created_at: true,
+        payment_at: true,
+        payment: true,
         orderItems: {
           include: {
             product: {
@@ -84,6 +87,16 @@ export class OrderService {
                 },
               },
             },
+          },
+        },
+        paymentUser: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
           },
         },
       },
@@ -218,7 +231,26 @@ export class OrderService {
     }
   }
 
-  async payOrder(dto: PayOrderDto, res: Response) {
+  async deleteOrder(id: number, res: Response) {
+    try {
+      const deleteOrder = await this.prisma.order.update({
+        where: {
+          id: id,
+        },
+        data: {
+          void: true,
+        },
+      });
+      if (deleteOrder)
+        return res.status(200).json({ message: 'Đã xóa hóa đơn' });
+      else return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
+  async payOrder(dto: PayOrderDto, req: CustomRequest, res: Response) {
     try {
       await this.prisma.$transaction(async (p) => {
         // Update order payment
@@ -229,6 +261,7 @@ export class OrderService {
           data: {
             payment_id: dto.paymentMethod,
             payment_at: dto.paymentAt,
+            payment_by: req.user.id,
             status: OrderStatus.PAID,
           },
           include: {

@@ -182,3 +182,29 @@ export type RevenueOverviewDto = {
   revenue: number;
   numberOfOrder: number;
 };
+
+export type CreateRoleDto = {
+  name: string;
+  color: string;
+  perms: string[];
+};
+
+export type UpdateRoleDto = {
+  id: string;
+  name: string;
+  color: string;
+  perms: string[];
+};
+
+export type CreateAccountDto = {
+  username: string;
+  password: string;
+  name: string;
+  roles: string[];
+};
+
+export type UpdateAccountDto = {
+  id: string;
+  name: string;
+  roles: string[];
+};

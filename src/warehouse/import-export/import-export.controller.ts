@@ -13,11 +13,17 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthGuard } from 'src/guards/auth/auth.guard';
+import { Permissions } from 'src/decorator/permissions.decorator';
+import { Permission } from 'src/utils/enum';
+import { PermissionsGuard } from 'src/guards/permissions/permissions.guard';
 
 @Controller('/api/import-export')
 @UseGuards(AuthGuard)
 export class ImportExportController {
   constructor(private importExportService: ImportExportService) {}
+
+  @UseGuards(PermissionsGuard)
+  @Permissions(Permission.Warehouse_ImportNote_Create)
   @Post('/createImportNote')
   createImport(
     @Body() dto: CreateImportNoteDto,
@@ -27,6 +33,8 @@ export class ImportExportController {
     return this.importExportService.createImportNote(dto, req, res);
   }
 
+  @UseGuards(PermissionsGuard)
+  @Permissions(Permission.Warehouse_ExportNote_Create)
   @Post('/createExportNote')
   createExport(
     @Body() dto: CreateExportNoteDto,
@@ -36,6 +44,8 @@ export class ImportExportController {
     return this.importExportService.createExportNote(dto, req, res);
   }
 
+  @UseGuards(PermissionsGuard)
+  @Permissions(Permission.Warehouse_View)
   @Get('/getByFilter')
   getByFilter(
     @Res() res: Response,
@@ -52,21 +62,28 @@ export class ImportExportController {
     });
   }
 
+  @UseGuards(PermissionsGuard)
+  @Permissions(Permission.Warehouse_View)
   @Get('/getImportNoteDetail')
   getImportNoteDetail(@Res() res: Response, @Query('id') id) {
     return this.importExportService.getImportNoteDetail(id, res);
   }
 
+  @UseGuards(PermissionsGuard)
+  @Permissions(Permission.Warehouse_View)
   @Get('/getExportNoteDetail')
   getExportNoteDetail(@Res() res: Response, @Query('id') id) {
     return this.importExportService.getExportNoteDetail(id, res);
   }
-
+  @UseGuards(PermissionsGuard)
+  @Permissions(Permission.Warehouse_Note_Delete)
   @Post('/deleteImportNote')
   deleteImportNote(@Res() res: Response, @Query('id') id) {
     return this.importExportService.deleteImportNote(id, res);
   }
 
+  @UseGuards(PermissionsGuard)
+  @Permissions(Permission.Warehouse_Note_Delete)
   @Post('/deleteExportNote')
   deleteExportNote(@Res() res: Response, @Query('id') id) {
     return this.importExportService.deleteExportNote(id, res);
