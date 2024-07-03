@@ -26,4 +26,14 @@ export class StatisticController {
   getProductSaleByCategoryChartData(@Res() res: Response) {
     return this.StatisticService.getProductSaleByCategoryChartData(res);
   }
+
+  @Get('/getOrderPaymentTypeChartData')
+  getOrderPaymentTypeChartData(@Res() res: Response) {
+    return this.StatisticService.getOrderPaymentTypeChartData(res);
+  }
+
+  @Get('/getTopSaleProduct')
+  getTopSaleProduct(@Res() res: Response) {
+    return this.StatisticService.getTopSaleProduct(res);
+  }
 }

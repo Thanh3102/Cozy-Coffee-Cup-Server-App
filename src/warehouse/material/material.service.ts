@@ -216,7 +216,7 @@ export class MaterialService {
         },
       });
       if (material) {
-        return res.status(200).json({ data: { material } });
+        return res.status(200).json({ message: 'Lưu thành công' });
       }
     } catch (error) {
       console.log(error);
@@ -250,6 +250,48 @@ export class MaterialService {
     } catch (error) {
       console.log(error);
       return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
+  async getRunOutMaterial(res: Response) {
+    try {
+      type RunOutMaterial = {
+        id: number;
+        name: string;
+        stock_quantity: number;
+        unit: string;
+      };
+      const runOutMaterials: RunOutMaterial[] = [];
+      const materials = await this.prisma.material.findMany({
+        select: {
+          id: true,
+          name: true,
+          stock_quantity: true,
+          min_stock: true,
+          unit: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      materials.forEach((material) => {
+        if (material.stock_quantity <= material.min_stock) {
+          runOutMaterials.push({
+            id: material.id,
+            name: material.name,
+            stock_quantity: material.stock_quantity,
+            unit: material.unit.name,
+          });
+        }
+      });
+
+      return res.status(200).json({ materials: runOutMaterials });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: 'Không thể lấy dữ liệu nguyên liệu sắp hết' });
     }
   }
 }

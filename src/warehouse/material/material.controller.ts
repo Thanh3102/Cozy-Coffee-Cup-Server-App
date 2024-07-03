@@ -44,6 +44,13 @@ export class MaterialController {
       parseInt(itemPerPage),
     );
   }
+  
+  @Permissions(Permission.Warehouse_View)
+  @UseGuards(PermissionsGuard)
+  @Get('/getRunOutMaterial')
+  getRunOutMaterial(@Res() res: Response) {
+    return this.materialService.getRunOutMaterial(res);
+  }
 
   @Permissions(Permission.Warehouse_View)
   @UseGuards(PermissionsGuard)

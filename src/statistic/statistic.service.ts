@@ -195,6 +195,55 @@ export class StatisticService {
     }
   }
 
+  async getOrderPaymentTypeChartData(res: Response) {
+    type ChartData = {
+      labels: string[];
+      values: number[];
+      total: number;
+    };
+    try {
+      const data: ChartData = { labels: [], values: [], total: 0 };
+      const today = getCurrentDate();
+      const month = today.getMonth();
+      const year = today.getFullYear();
+      var firstDay = new Date(Date.UTC(year, month, 1));
+      var lastDay = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+
+      const stats = await this.prisma.order.groupBy({
+        by: ['payment_id'],
+        _count: {
+          type: true,
+        },
+        where: {
+          created_at: {
+            gte: firstDay,
+            lte: lastDay,
+          },
+          status: OrderStatus.PAID,
+        },
+      });
+
+      for (let item of stats) {
+        const { type } = await this.prisma.payment.findFirst({
+          select: {
+            type: true,
+          },
+          where: {
+            id: item.payment_id,
+          },
+        });
+        data.labels.push(type);
+        data.values.push(item._count.type);
+        data.total += item._count.type;
+      }
+
+      return res.status(200).json({ data: data });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
   async getProductSaleByCategoryChartData(res: Response) {
     type ChartData = {
       labels: string[];
@@ -252,4 +301,63 @@ export class StatisticService {
       return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
     }
   }
+
+  async getTopSaleProduct(res: Response) {
+    type ReturnProduct = {
+      id: number;
+      name: string;
+      sales: number;
+      revenue: number;
+    };
+    try {
+      const today = getCurrentDate();
+      const month = today.getMonth();
+      const year = today.getFullYear();
+      var firstDay = new Date(Date.UTC(year, month, 1));
+      var lastDay = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+      const responseData: ReturnProduct[] = [];
+      const productSumGroup = await this.prisma.productStatistics.groupBy({
+        by: ['product_id'],
+        _sum: {
+          sold: true,
+          revenue: true,
+        },
+        where: {
+          sale_date: {
+            gte: firstDay,
+            lte: lastDay,
+          },
+        },
+      });
+
+      const limit = productSumGroup.length < 10 ? productSumGroup.length : 10;
+      for (let i = 0; i < limit; i++) {
+        const { name } = await this.prisma.product.findFirst({
+          where: {
+            id: productSumGroup[i].product_id,
+          },
+          select: {
+            name: true,
+          },
+        });
+
+        responseData.push({
+          id: productSumGroup[i].product_id,
+          name: name,
+          revenue: Number(productSumGroup[i]._sum.revenue),
+          sales: productSumGroup[i]._sum.sold,
+        });
+      }
+      const sortData = responseData.sort((a, b) => {
+        if (a.revenue == b.revenue) return 0;
+        return a.revenue > b.revenue ? -1 : 1;
+      });
+
+      return res.status(200).json({ products: sortData });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Đã có lỗi xảy ra' });
+    }
+  }
+
 }

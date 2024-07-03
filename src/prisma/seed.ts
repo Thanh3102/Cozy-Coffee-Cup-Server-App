@@ -142,7 +142,12 @@ const createUser = async (
   });
 };
 
-const createUnit = async (prisma) => {
+const createUnit = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
   const units = [
     { name: 'Kilogram', short: 'Kg' },
     { name: 'Gram', short: 'g' },
@@ -162,7 +167,12 @@ const createUnit = async (prisma) => {
   });
 };
 
-const createProvider = async (prisma) => {
+const createProvider = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
   var suppliers = [
     {
       companyName: 'ABC Company',
@@ -251,7 +261,12 @@ const createProvider = async (prisma) => {
   });
 };
 
-const createCategories = async (prisma) => {
+const createCategories = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
   const categories = ['Cà phê', 'Trà', 'Sinh tố'];
   categories.map(async (category) => {
     return await prisma.category.create({
@@ -262,7 +277,12 @@ const createCategories = async (prisma) => {
   });
 };
 
-const createMaterial = async (prisma) => {
+const createMaterial = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
   const user = await prisma.user.findFirst();
   for (let i = 0; i < 10; i++) {
     await prisma.material.create({
@@ -280,7 +300,12 @@ const createMaterial = async (prisma) => {
   }
 };
 
-const createPayment = async (prisma) => {
+const createPayment = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
   const paymentType = ['Trả tiền mặt', 'Thanh toán qua thẻ ngân hàng'];
 
   await prisma.payment.createMany({
@@ -290,7 +315,12 @@ const createPayment = async (prisma) => {
   });
 };
 
-const createDayStatistic = async (prisma) => {
+const createDayStatistic = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
   const start = new Date('2024-01-01');
   const end = new Date('2024-05-31');
   let count = 0;
@@ -307,19 +337,57 @@ const createDayStatistic = async (prisma) => {
   }
 };
 
+const createProductStatistic = async (
+  prisma: Omit<
+    PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >,
+) => {
+  const start = new Date('2024-01-01');
+  let count = 0;
+  const products = await prisma.product.findMany({
+    select: {
+      id: true,
+    },
+  });
+  while (count <= 365) {
+    for (let product of products) {
+      await prisma.productStatistics.create({
+        data: {
+          product_id: product.id,
+          sale_date: start,
+          revenue: randomPositiveInteger(100000000),
+          sold: randomPositiveInteger(10000),
+        },
+      });
+    }
+    start.setDate(start.getDate() + 1);
+    count++;
+  }
+};
+
 async function main() {
   try {
-    await prisma.$transaction(async (p) => {
-      // await deleteTableRecord(p);
-      // await createPermission(p);
-      // await createUser(p);
-      // await createUnit(p);
-      // await createProvider(p);
-      // await createCategories(p);
-      // await createMaterial(p);
-      // await createPayment(p);
-      // await createDayStatistic(p);
-    });
+    await prisma.$transaction(
+      async (p) => {
+        // await deleteTableRecord(p);
+        // await createPermission(p);
+        // await createUser(p);
+        // await createUnit(p);
+        // await createProvider(p);
+        // await createCategories(p);
+        // await createMaterial(p);
+        // await createPayment(p);
+        // await createDayStatistic(p);
+
+        // Need create product first
+        // await createProductStatistic(p);
+      },
+      {
+        maxWait: 20000,
+        timeout: 100000,
+      },
+    );
   } catch (error) {
     console.log(error);
   }

@@ -7,7 +7,7 @@ export class AddMaterialDto {
   stock_quantity: number;
   @IsNumber()
   min_stock: number;
-  expiration_date: Date;
+  expiration_date: Date | undefined;
   @IsNotEmpty()
   @IsNumber()
   unit_id: number;

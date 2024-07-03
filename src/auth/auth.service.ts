@@ -69,9 +69,9 @@ export class AuthService {
           user: payload,
         });
       }
-      return res.status(400).json({ message: 'Mật khẩu không chính xác' });
+      return res.status(401).json({ message: 'Mật khẩu không chính xác' });
     } else {
-      return res.status(400).json({ message: 'Tên đăng nhập không tồn tại' });
+      return res.status(401).json({ message: 'Tên đăng nhập không tồn tại' });
     }
   }
   async logout(res: ResponseType) {
